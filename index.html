@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Spin Wheel - Custom Edition</title>
+    <title>Pro Spin Wheel - JP Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;900&display=swap');
@@ -50,7 +50,7 @@
     </div>
 
     <div class="input-section">
-        <p style="font-size: 12px; font-weight: 800; margin-bottom: 10px; color: #6c5ce7;">MASUKKAN NAMA (PISAH DENGAN KOMA)</p>
+        <p style="font-size: 12px; font-weight: 800; margin-bottom: 10px; color: #6c5ce7;">DAFTAR NAMA </p>
         <textarea id="nameInput">Andi, Budi, Caca, Dedi, Euis, Fafa, Gani, Hana, Iwan, Joko, Kiki, Lala, Mira, Nana, Opi, Pipo</textarea>
         <button class="update-btn" onclick="updateWheel()">UPDATE RODA</button>
     </div>
@@ -89,7 +89,6 @@
     function updateWheel() {
         const input = document.getElementById('nameInput').value;
         names = input.split(',').map(name => name.trim()).filter(name => name !== "");
-        if(names.length < 2) alert("Masukkan minimal 2 nama!");
         draw();
     }
 
@@ -116,6 +115,10 @@
 
     function draw() {
         const total = names.length;
+        if(total === 0) {
+            ctx.clearRect(-500, -500, 1000, 1000);
+            return;
+        }
         const arc = (2 * Math.PI) / total;
         canvas.width = 1000; canvas.height = 1000; ctx.translate(500, 500);
         ctx.clearRect(-500, -500, 1000, 1000);
@@ -130,11 +133,15 @@
     }
 
     function startExtremeSpin(mode) {
-        if (spinning || names.length < 2) return;
+        if (spinning || names.length < 1) return;
+        if (names.length === 1) {
+            showWinner(0);
+            return;
+        }
+        
         initAudio(); spinning = true;
         document.getElementById('status').innerText = "MENENTUKAN NASIB...";
         
-        // Target: Jika 'cheat' selalu ambil nama ke-3 (index 2)
         let target = (mode === 'cheat' && names.length > 2) ? 2 : Math.floor(Math.random() * names.length);
         
         const segmentDeg = 360 / names.length;
@@ -153,12 +160,23 @@
         }, 10);
 
         setTimeout(() => { 
-            playApplause();
-            document.getElementById('winnerName').innerText = names[target]; 
-            document.getElementById('winPopup').style.display = 'flex';
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            spinning = false; document.getElementById('status').innerText = "READY TO SPIN AGAIN";
+            showWinner(target);
         }, 20500);
+    }
+
+    function showWinner(index) {
+        playApplause();
+        const winner = names[index];
+        document.getElementById('winnerName').innerText = winner; 
+        document.getElementById('winPopup').style.display = 'flex';
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        
+        // --- LOGIKA HAPUS OTOMATIS ---
+        names.splice(index, 1); // Hapus dari array
+        document.getElementById('nameInput').value = names.join(', '); // Update textarea
+        
+        spinning = false; 
+        document.getElementById('status').innerText = "READY TO SPIN AGAIN";
     }
 
     function getRotation(el) {
@@ -171,9 +189,11 @@
         return (angle < 0) ? angle + 360 : angle;
     }
 
-    function closePopup() { document.getElementById('winPopup').style.display = 'none'; }
+    function closePopup() { 
+        document.getElementById('winPopup').style.display = 'none'; 
+        draw(); // Gambar ulang roda setelah popup ditutup agar terlihat perubahannya
+    }
     
-    // Inisialisasi awal
     updateWheel();
 </script>
 </body>
